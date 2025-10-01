@@ -40,12 +40,9 @@ def submit_survey():
     data_to_store["email"] = hashlib.sha256(data_to_store["email"].encode("utf-8")).hexdigest()
     # age stays as int for test compatibility
 
-    # Ensure folder exists
-    os.makedirs("data", exist_ok=True)
+    data_dir = "data"
+    os.makedirs(data_dir, exist_ok=True)  # creates folder if missing
 
-    # Write to file
-    data_dir = os.path.join(os.path.dirname(__file__), "data")
-    os.makedirs(data_dir, exist_ok=True)
 
     file_path = os.path.join(data_dir, "survey.ndjson")
     with open(file_path, "a") as f:
