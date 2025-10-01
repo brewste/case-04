@@ -46,7 +46,7 @@ def submit_survey():
     )
 
     # Step 5: save hashed record to disk
-    with open("survey.ndjson", "a") as f:
+    with open("data/survey.ndjson", "a") as f:
         f.write(json.dumps(data_to_store) + "\n")
 
     # Step 6: respond
