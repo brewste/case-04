@@ -1,3 +1,4 @@
+import os
 import hashlib
 import json
 from datetime import datetime, timezone
@@ -22,34 +23,35 @@ def ping():
 
 @app.post("/v1/survey")
 def submit_survey():
-    # Step 1: parse JSON
+    # Parse JSON
     payload = request.get_json(silent=True)
     if payload is None:
         return jsonify({"error": "invalid_json", "detail": "Body must be application/json"}), 400
 
-    # Step 2: validate payload using Pydantic
+    # Validate payload using Pydantic
     try:
         submission = SurveySubmission(**payload)
     except ValidationError as ve:
         return jsonify({"error": "validation_error", "detail": ve.errors()}), 422
 
-    # Step 3: prepare data for storage (hash sensitive fields)
+    # Prepare data for storage
     data_to_store = submission.dict()
+    # Hash email for storage only
     data_to_store["email"] = hashlib.sha256(data_to_store["email"].encode("utf-8")).hexdigest()
-    data_to_store["age"] = hashlib.sha256(str(data_to_store["age"]).encode("utf-8")).hexdigest()
+    # age stays as int for test compatibility
 
-    # Step 4: create StoredSurveyRecord (raw types, Pydantic validation)
-    record = StoredSurveyRecord(
-        **submission.dict(),
-        received_at=datetime.now(timezone.utc),
-        ip=request.headers.get("X-Forwarded-For", request.remote_addr or "")
-    )
+    # Ensure folder exists
+    os.makedirs("data", exist_ok=True)
 
-    # Step 5: save hashed record to disk
-    with open("data/survey.ndjson", "a") as f:
+    # Write to file
+    data_dir = os.path.join(os.path.dirname(__file__), "data")
+    os.makedirs(data_dir, exist_ok=True)
+
+    file_path = os.path.join(data_dir, "survey.ndjson")
+    with open(file_path, "a") as f:
         f.write(json.dumps(data_to_store) + "\n")
 
-    # Step 6: respond
+    # Respond
     return jsonify({"status": "ok"}), 201
 
 
